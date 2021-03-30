@@ -1,0 +1,9 @@
+Appendix 1
+==========
+
+Simplified Getting Started Guide
+--------------------------------
+
+Model, View, Controller Straight Talk
+-------------------------------------
+The Model-View-Controller set up was not something designed by some great man but rather a natural evolution required by convenience. Models have only to do with databases. The Static pages in the Codeigniter tutorial could actually be in a database.
