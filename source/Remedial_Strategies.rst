@@ -10,12 +10,12 @@ Turbocharge file structure (Better but more complicated)
 --------------------------------------------------------
 I forked this from this web page: https://forum.codeigniter.com/thread-75774.html
 
-- Change the name of your project folder (initially framework-4.1.1 or something) to 'ci4_project' for the sake of clarity.
-- Inside the 'ci4_project' folder, change the name of your 'public' folder to 'public_html' to mimic the folder structure of your hosting.
+- If you clone from github your project folder is called 'Codeigniter4'. If you download, it might be called 'framework-4.1.1' or something. You can call it anything but just for clarity rename it 'Codeigniter4' (at least while trying out this tutorial).
+- Inside the 'Codeigniter4' folder, change the name of your 'public' folder to 'public_html' to mimic the folder structure of your hosting.
 - Make a new folder inside 'public_html' called 'mydomain.com' or whatever locally duplicates your live domain. (Always replace the term 'mydomain' with your real domain name.)
 - Move EVERYTHING in 'public_html' into the subfolder 'mydomain.com'.
-- Create a new folder named 'ci4_code' (or whatever you want to call it) inside the 'ci4_project' folder.
-- Move everything that ISN'T in the 'public_html' folder into the 'ci4_code' folder EXCEPT the file 'spark'.
+- Create a new folder named 'ci4_code' (or whatever you want to call it) inside the 'Codeigniter4' folder.
+- Move everything that ISN'T in the 'public_html' folder into the 'ci4_code' folder EXCEPT the file 'spark', README.md, and LICENSE (and the github files and folders if you cloned, i.e. .git, .github, .editorconfig, .nojekyll, .gitattributes but MOVE .gitignore -- it's supposed to be in the 'ci4_code' folder).
 - Change FCPATH in 'public_html/index.php' (at or about line 28) (my comments are in CAPITALS)::
 
 	// Load our paths config file
@@ -24,7 +24,7 @@ I forked this from this web page: https://forum.codeigniter.com/thread-75774.htm
 	require realpath(FCPATH . '../../ci4_code/app/Config/Paths.php') ?: FCPATH . '../../ci4_code/app/Config/Paths.php';
 	// ^^^ Change this if you move your application folder
 
-- Change 'FCPATH' and 'realpath' in 'ci4_project/spark' file (starting at about line 40)::
+- Change 'FCPATH' and 'realpath' in 'Codeigniter4/spark' file (starting at about line 40)::
 
 	// Path to the front controller
 	//CHANGED THIS PER https://forum.codeigniter.com/thread-75774.html
@@ -35,9 +35,44 @@ I forked this from this web page: https://forum.codeigniter.com/thread-75774.htm
 	require realpath('ci4_code/app/Config/Paths.php') ?: 'ci4_code/app/Config/Paths.php';
 	// ^^^ Change this line if you move your application folder
 
-- The 'ci4_project/spark' file can have any name. Just make sure your code editor doesn't save an extension like '.txt' or '.php' on the end. We'll call it 'spark_mydomain'. That way if you want to use CodeIgniter4 on any other local domains, all you have to do is change the 'spark' file.
+- The 'Codeigniter4/spark' file can have any name. Just make sure your code editor doesn't save an extension like '.txt' or '.php' on the end. We'll call it 'spark_mydomain'. That way if you want to use CodeIgniter4 on any other local domains, all you have to do is change the 'spark' file.
 
 Here's where it gets tricky. With where you are so far, if you have multiple domains using the 'ci4_code' folder they are all going to be using the same '.env' file which I don't think will work. There might be other ways of getting around this, but what follows is the work-around I used. It seems to work, but I don't know about security -- and as well you have to alter a CodeIgniter system file which is supposed to be a 'no-no'.
+
+- The first thing I tried was adding a suffix to the '.env' file like '.env.localhost'. This worked great until you tried to use the command 'php spark_mydomain migrate'. It turns out spark wants the '.env' file to be '.env' and nothing else. So my solution was to put each '.env' file in their own directory, so the path to the '.env' file would be thus: 'ci4_code/mydomain.com/.env'. Here's the code for the DotEnv.php file::
+
+	public function __construct(string $path, string $file = '.env')
+	{
+		//FCPATH IS 'Front controller path' per https://stackoverflow.com/questions/13992074/codeigniter-path-constants-definitions
+		//GET 'mydomain.com' from FCPATH
+		$envdir = basename(FCPATH);
+		//ADD $envdir (ENVELOPE DIRECTORY) TO PATH
+		$this->path = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $envdir . DIRECTORY_SEPARATOR . $file;
+		
+	}
+
+- This is okay with localhost but we need something more better for 'live'::
+
+	public function __construct(string $path, string $file = '.env')
+	{
+		/* SOURCES 
+		https://stackoverflow.com/questions/17201170/php-how-to-get-the-base-domain-url
+		https://expressionengine.com/blog/http-host-and-server-name-security-issues */
+
+		if ($_SERVER['SERVER_NAME'] === 'localhost'){
+			$domain = 'localhost';
+		} else {
+			$domain = basename(FCPATH);
+		}
+		// JUST FOR TESTING
+		echo "Serving from domain: " . $domain;
+				
+		//BACK TO ORIGINAL CODE except added 'domain' folder to hold '.env' file
+		$this->path = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $domain . DIRECTORY_SEPARATOR . $file;
+		
+	}
+
+- THIS STUFF DOESN'T WORK BECAUSE spark migrate hangs up on any envelope file that is not exactly '.env'
 
 - Go to your '.env' file. Save a copy as '.env.mydomain.com' (where 'mydomain.com' is your real domain). ALSO, save a copy as '.env.localhost'. Put your localhost base_URL and database settings in '.env.localhost'.
 
