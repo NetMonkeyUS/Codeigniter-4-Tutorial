@@ -1,6 +1,0 @@
-# ignore files
-make.bat
-Makefile
-source/
-build/
-!build/html/*.html
